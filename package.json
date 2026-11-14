@@ -1,0 +1,14 @@
+{
+	"name": "blockbench-ai-modeler",
+	"version": "0.1.0",
+	"private": true,
+	"description": "A Blockbench plugin for AI-assisted cube modeling.",
+	"scripts": {
+		"build": "tsc --project tsconfig.json",
+		"watch": "tsc --project tsconfig.json --watch"
+	},
+	"devDependencies": {
+		"blockbench-types": "^5.2.1",
+		"typescript": "^7.0.2"
+	}
+}

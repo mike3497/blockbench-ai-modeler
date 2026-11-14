@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleDetection": "legacy",
+		"lib": ["ES2022", "DOM"],
+		"types": ["blockbench-types"],
+		"rootDir": "src",
+		"outDir": "dist",
+		"strict": true,
+		"skipLibCheck": true,
+		"noEmitOnError": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"include": ["src/**/*.ts"]
+}
