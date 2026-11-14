@@ -2,13 +2,19 @@
 	"name": "blockbench-ai-modeler",
 	"version": "0.1.0",
 	"private": true,
+	"type": "module",
 	"description": "A Blockbench plugin for AI-assisted cube modeling.",
 	"scripts": {
-		"build": "tsc --project tsconfig.json",
-		"watch": "tsc --project tsconfig.json --watch"
+		"build": "npm run typecheck && vite build",
+		"watch": "vite build --watch",
+		"typecheck": "tsc --noEmit --project tsconfig.json",
+		"test": "vitest run",
+		"test:watch": "vitest"
 	},
 	"devDependencies": {
 		"blockbench-types": "^5.2.1",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vite": "^8.3.8",
+		"vitest": "^5.1.0"
 	}
 }

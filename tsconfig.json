@@ -2,15 +2,14 @@
 	"compilerOptions": {
 		"target": "ES2022",
 		"module": "ESNext",
-		"moduleDetection": "legacy",
+		"moduleResolution": "Bundler",
 		"lib": ["ES2022", "DOM"],
 		"types": ["blockbench-types"],
-		"rootDir": "src",
-		"outDir": "dist",
+		"rootDir": ".",
+		"noEmit": true,
 		"strict": true,
 		"skipLibCheck": true,
-		"noEmitOnError": true,
 		"forceConsistentCasingInFileNames": true
 	},
-	"include": ["src/**/*.ts"]
+	"include": ["src/**/*.ts", "vite.config.ts"]
 }

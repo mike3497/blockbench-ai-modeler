@@ -1,3 +1,5 @@
+import {validateModel, type GeneratedModel} from './model';
+
 const AI_MODELER_MODELS = [
 	{ id: 'gpt-6.1-terra', name: 'GPT-6.1 Terra' },
 	{ id: 'gpt-6-luna', name: 'GPT-6 Luna' },
@@ -8,12 +10,9 @@ const AI_MODELER_VIEWS = ['front', 'left', 'right', 'back'] as const;
 const AI_MODELER_PRESETS_KEY = 'ai_modeler_style_presets_v1';
 const AI_MODELER_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 type ViewName = typeof AI_MODELER_VIEWS[number];
-type Vector3 = [number, number, number];
 type StylePreset = {name: string; instructions: string};
 type AIReferenceImage = {name: string; dataUrl: string};
 type References = Record<ViewName, AIReferenceImage | null>;
-type ModelElement = {name: string; from: Vector3; to: Vector3; rotation: Vector3; origin: Vector3};
-type GeneratedModel = {name: string; elements: ModelElement[]};
 type InputContent =
 	| {type: 'input_text'; text: string}
 	| {type: 'input_image'; image_url: string; detail: 'high'};
@@ -178,40 +177,6 @@ function aiModelerReadFile(file: File): Promise<string> {
 	});
 }
 
-function aiModelerValidVector(value: unknown, maxAbs = 64): value is Vector3 {
-	return Array.isArray(value) && value.length === 3 && value.every((item: unknown) =>
-		typeof item === 'number' && Number.isFinite(item) && Math.abs(item) <= maxAbs
-	);
-}
-
-function aiModelerValidateModel(value: unknown): GeneratedModel {
-	if (!aiModelerIsRecord(value) || typeof value.name !== 'string' || !value.name.trim()) throw new Error('The model response needs a name.');
-	if (!Array.isArray(value.elements) || value.elements.length < 1 || value.elements.length > 200) {
-		throw new Error('The model must contain between 1 and 200 cubes. Try a simpler prompt.');
-	}
-	const elements = value.elements.map((element: unknown): ModelElement => {
-		if (!aiModelerIsRecord(element) || typeof element.name !== 'string' || !aiModelerValidVector(element.from) || !aiModelerValidVector(element.to) ||
-			!aiModelerValidVector(element.rotation, 180) || !aiModelerValidVector(element.origin)) {
-			throw new Error('The model response contains invalid cube data.');
-		}
-		const from = element.from;
-		const to = element.to;
-		const rotation = element.rotation;
-		const origin = element.origin;
-		if (from.some((coordinate, index) => coordinate >= to[index])) {
-			throw new Error('The model response contains a cube with zero or negative size.');
-		}
-		return {
-			name: element.name.trim().slice(0, 64) || 'Cube',
-			from,
-			to,
-			rotation,
-			origin
-		};
-	});
-	return {name: value.name.trim().slice(0, 64), elements};
-}
-
 function aiModelerExtractText(response: unknown): string {
 	if (!aiModelerIsRecord(response) || !Array.isArray(response.output)) throw new Error('The API returned no model data. Try again with a shorter prompt.');
 	for (const item of response.output || []) {
@@ -232,7 +197,7 @@ function aiModelerAddToProject(model: GeneratedModel): void {
 	if (!Cube.isTypePermitted('cube')) throw new Error('The current project format does not support cube elements.');
 
 	const group = new Group({name: model.name});
-	const cubes = model.elements.map((element: ModelElement) => new Cube({
+	const cubes = model.elements.map(element => new Cube({
 		name: element.name,
 		from: element.from,
 		to: element.to,
@@ -373,7 +338,7 @@ async function aiModelerGenerate(dialog: Dialog, root: HTMLElement, references: 
 				? result.error.message : `OpenAI returned HTTP ${response.status}.`;
 			throw new Error(apiMessage);
 		}
-		const geometry = aiModelerValidateModel(JSON.parse(aiModelerExtractText(result)));
+		const geometry = validateModel(JSON.parse(aiModelerExtractText(result)));
 		if (Project !== targetProject || Format !== targetFormat) throw new Error('The active project changed during generation. Run it again in the project you want to edit.');
 		aiModelerAddToProject(geometry);
 		Blockbench.showToastNotification({text: `Generated ${geometry.name}.`, icon: 'view_in_ar'});
