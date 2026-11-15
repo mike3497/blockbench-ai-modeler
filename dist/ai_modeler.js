@@ -110,7 +110,7 @@
 	function aiModelerHandleApiKeyPaste(event) {
 		const target = event.target;
 		if (!(target instanceof HTMLInputElement) || target.type !== "password") return;
-		if (isApiKeyPasteShortcut(event, Boolean(target.closest("#setting_ai_modeler_openai_api_key")))) event.stopPropagation();
+		if (isApiKeyPasteShortcut(event, Boolean(target.closest("#setting_ai_modeler_openai_api_key")))) event.stopImmediatePropagation();
 	}
 	function aiModelerEscapeHTML(value) {
 		const escape = {
@@ -519,7 +519,7 @@
 		variant: "desktop",
 		min_version: "5.2.1",
 		onload() {
-			document.addEventListener("keydown", aiModelerHandleApiKeyPaste, true);
+			window.addEventListener("keydown", aiModelerHandleApiKeyPaste, true);
 			aiModelerApiKeySetting = new Setting("ai_modeler_openai_api_key", {
 				name: "AI Modeler — OpenAI API key",
 				description: "Used directly by AI Modeler. Keep this key private.",
@@ -537,7 +537,7 @@
 			MenuBar.menus.tools.addAction(aiModelerAction);
 		},
 		onunload() {
-			document.removeEventListener("keydown", aiModelerHandleApiKeyPaste, true);
+			window.removeEventListener("keydown", aiModelerHandleApiKeyPaste, true);
 			if (aiModelerAction) aiModelerAction.delete();
 			if (aiModelerApiKeySetting) aiModelerApiKeySetting.delete();
 		}
