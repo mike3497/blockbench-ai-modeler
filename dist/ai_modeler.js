@@ -30,8 +30,11 @@
 		};
 	}
 	// src/api_key_paste.ts
-	function isApiKeyPasteShortcut(event, targetIsApiKeyInput) {
-		return targetIsApiKeyInput && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v";
+	function pasteApiKey(readClipboard, saveApiKey) {
+		const key = readClipboard().trim();
+		if (!key) return false;
+		saveApiKey(key);
+		return true;
 	}
 	// src/ai_modeler.ts
 	var AI_MODELER_MODELS = [
@@ -107,11 +110,7 @@
 	};
 	var aiModelerAction;
 	var aiModelerApiKeySetting;
-	function aiModelerHandleApiKeyPaste(event) {
-		const target = event.target;
-		if (!(target instanceof HTMLInputElement) || target.type !== "password") return;
-		if (isApiKeyPasteShortcut(event, Boolean(target.closest("#setting_ai_modeler_openai_api_key")))) event.stopImmediatePropagation();
-	}
+	var aiModelerPasteKeySetting;
 	function aiModelerEscapeHTML(value) {
 		const escape = {
 			"&": "&amp;",
@@ -519,7 +518,6 @@
 		variant: "desktop",
 		min_version: "5.2.1",
 		onload() {
-			window.addEventListener("keydown", aiModelerHandleApiKeyPaste, true);
 			aiModelerApiKeySetting = new Setting("ai_modeler_openai_api_key", {
 				name: "AI Modeler — OpenAI API key",
 				description: "Used directly by AI Modeler. Keep this key private.",
@@ -527,6 +525,30 @@
 				plugin: "ai_modeler",
 				type: "password",
 				value: ""
+			});
+			aiModelerPasteKeySetting = new Setting("ai_modeler_paste_api_key", {
+				name: "Paste",
+				description: "Paste the OpenAI API key from your clipboard into the setting above.",
+				category: "general",
+				plugin: "ai_modeler",
+				type: "click",
+				icon: "content_paste",
+				click() {
+					try {
+						const systemClipboard = requireNativeModule("clipboard");
+						if (!systemClipboard) throw new Error("Clipboard access is unavailable.");
+						const pasted = pasteApiKey(() => systemClipboard.readText(), (key) => aiModelerApiKeySetting.set(key));
+						Blockbench.showToastNotification({
+							text: pasted ? "OpenAI API key pasted." : "Clipboard is empty.",
+							icon: "content_paste"
+						});
+					} catch {
+						Blockbench.showToastNotification({
+							text: "Could not read the clipboard.",
+							icon: "content_paste"
+						});
+					}
+				}
 			});
 			aiModelerAction = new Action("ai_modeler_generate", {
 				name: "AI Modeler",
@@ -537,8 +559,8 @@
 			MenuBar.menus.tools.addAction(aiModelerAction);
 		},
 		onunload() {
-			window.removeEventListener("keydown", aiModelerHandleApiKeyPaste, true);
 			if (aiModelerAction) aiModelerAction.delete();
+			if (aiModelerPasteKeySetting) aiModelerPasteKeySetting.delete();
 			if (aiModelerApiKeySetting) aiModelerApiKeySetting.delete();
 		}
 	});

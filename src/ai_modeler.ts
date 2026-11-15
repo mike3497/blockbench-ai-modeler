@@ -1,5 +1,5 @@
 import {validateModel, type GeneratedModel} from './model';
-import {isApiKeyPasteShortcut} from './api_key_paste';
+import {pasteApiKey} from './api_key_paste';
 
 const AI_MODELER_MODELS = [
 	{ id: 'gpt-6.1-terra', name: 'GPT-6.1 Terra' },
@@ -44,15 +44,7 @@ const AI_MODELER_SCHEMA = {
 
 let aiModelerAction: Action;
 let aiModelerApiKeySetting: Setting;
-
-function aiModelerHandleApiKeyPaste(event: KeyboardEvent): void {
-	const target = event.target;
-	if (!(target instanceof HTMLInputElement) || target.type !== 'password') return;
-	if (isApiKeyPasteShortcut(event, Boolean(target.closest('#setting_ai_modeler_openai_api_key')))) {
-		// Let native paste run; Blockbench doesn't recognize password fields as focused text inputs.
-		event.stopImmediatePropagation();
-	}
-}
+let aiModelerPasteKeySetting: Setting;
 
 function aiModelerEscapeHTML(value: unknown): string {
 	const escape: Record<string, string> = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
@@ -449,7 +441,6 @@ BBPlugin.register('ai_modeler', {
 	variant: 'desktop',
 	min_version: '5.2.1',
 	onload() {
-		window.addEventListener('keydown', aiModelerHandleApiKeyPaste, true);
 		aiModelerApiKeySetting = new Setting('ai_modeler_openai_api_key', {
 			name: 'AI Modeler — OpenAI API key',
 			description: 'Used directly by AI Modeler. Keep this key private.',
@@ -457,6 +448,24 @@ BBPlugin.register('ai_modeler', {
 			plugin: 'ai_modeler',
 			type: 'password',
 			value: ''
+		});
+		aiModelerPasteKeySetting = new Setting('ai_modeler_paste_api_key', {
+			name: 'Paste',
+			description: 'Paste the OpenAI API key from your clipboard into the setting above.',
+			category: 'general',
+			plugin: 'ai_modeler',
+			type: 'click',
+			icon: 'content_paste',
+			click() {
+				try {
+					const systemClipboard = requireNativeModule('clipboard');
+					if (!systemClipboard) throw new Error('Clipboard access is unavailable.');
+					const pasted = pasteApiKey(() => systemClipboard.readText(), key => aiModelerApiKeySetting.set(key));
+					Blockbench.showToastNotification({text: pasted ? 'OpenAI API key pasted.' : 'Clipboard is empty.', icon: 'content_paste'});
+				} catch {
+					Blockbench.showToastNotification({text: 'Could not read the clipboard.', icon: 'content_paste'});
+				}
+			}
 		});
 		aiModelerAction = new Action('ai_modeler_generate', {
 			name: 'AI Modeler',
@@ -467,8 +476,8 @@ BBPlugin.register('ai_modeler', {
 		MenuBar.menus.tools.addAction(aiModelerAction);
 	},
 	onunload() {
-		window.removeEventListener('keydown', aiModelerHandleApiKeyPaste, true);
 		if (aiModelerAction) aiModelerAction.delete();
+		if (aiModelerPasteKeySetting) aiModelerPasteKeySetting.delete();
 		if (aiModelerApiKeySetting) aiModelerApiKeySetting.delete();
 	}
 });

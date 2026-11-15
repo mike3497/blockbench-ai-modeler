@@ -7,7 +7,7 @@ A Blockbench Desktop plugin that creates editable cube models from a text prompt
 1. Install Node.js, then run `npm install` in this repository.
 2. Run `npm run build`; this type-checks the TypeScript and creates `dist/ai_modeler.js` with Vite.
 3. In Blockbench Desktop, open **File → Plugins…** and load the built file, or drag it into Blockbench.
-4. Add your OpenAI API key under **File → Preferences → Settings** in the General category.
+4. Under **File → Preferences → Settings**, paste your OpenAI API key with the **Paste** action in the General category, or enter it in the masked key setting.
 5. Open **Tools → AI Modeler**.
 
 Run `npm test` to execute the Vitest suite.

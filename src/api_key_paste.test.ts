@@ -1,11 +1,14 @@
 import {expect, it} from 'vitest';
-import {isApiKeyPasteShortcut} from './api_key_paste';
+import {pasteApiKey} from './api_key_paste';
 
-it.each([
-	[{key: 'v', ctrlKey: true, metaKey: false}, true, true],
-	[{key: 'V', ctrlKey: false, metaKey: true}, true, true],
-	[{key: 'x', ctrlKey: true, metaKey: false}, true, false],
-	[{key: 'v', ctrlKey: true, metaKey: false}, false, false]
-])('recognizes API-key paste only for Ctrl/Cmd+V in its field', (event, isApiKeyInput, expected) => {
-	expect(isApiKeyPasteShortcut(event, isApiKeyInput)).toBe(expected);
+it('trims and saves the clipboard API key', () => {
+	const saved: string[] = [];
+	expect(pasteApiKey(() => ' sk-example ', key => saved.push(key))).toBe(true);
+	expect(saved).toEqual(['sk-example']);
+});
+
+it('does not replace the current key when the clipboard is empty', () => {
+	const saved: string[] = [];
+	expect(pasteApiKey(() => '  ', key => saved.push(key))).toBe(false);
+	expect(saved).toEqual([]);
 });
