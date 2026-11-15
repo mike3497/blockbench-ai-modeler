@@ -1,4 +1,5 @@
 import {validateModel, type GeneratedModel} from './model';
+import {isApiKeyPasteShortcut} from './api_key_paste';
 
 const AI_MODELER_MODELS = [
 	{ id: 'gpt-6.1-terra', name: 'GPT-6.1 Terra' },
@@ -43,6 +44,15 @@ const AI_MODELER_SCHEMA = {
 
 let aiModelerAction: Action;
 let aiModelerApiKeySetting: Setting;
+
+function aiModelerHandleApiKeyPaste(event: KeyboardEvent): void {
+	const target = event.target;
+	if (!(target instanceof HTMLInputElement) || target.type !== 'password') return;
+	if (isApiKeyPasteShortcut(event, Boolean(target.closest('#setting_ai_modeler_openai_api_key')))) {
+		// Let native paste run; Blockbench doesn't recognize password fields as focused text inputs.
+		event.stopPropagation();
+	}
+}
 
 function aiModelerEscapeHTML(value: unknown): string {
 	const escape: Record<string, string> = {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'};
@@ -439,6 +449,7 @@ BBPlugin.register('ai_modeler', {
 	variant: 'desktop',
 	min_version: '5.2.1',
 	onload() {
+		document.addEventListener('keydown', aiModelerHandleApiKeyPaste, true);
 		aiModelerApiKeySetting = new Setting('ai_modeler_openai_api_key', {
 			name: 'AI Modeler — OpenAI API key',
 			description: 'Used directly by AI Modeler. Keep this key private.',
@@ -456,6 +467,7 @@ BBPlugin.register('ai_modeler', {
 		MenuBar.menus.tools.addAction(aiModelerAction);
 	},
 	onunload() {
+		document.removeEventListener('keydown', aiModelerHandleApiKeyPaste, true);
 		if (aiModelerAction) aiModelerAction.delete();
 		if (aiModelerApiKeySetting) aiModelerApiKeySetting.delete();
 	}
